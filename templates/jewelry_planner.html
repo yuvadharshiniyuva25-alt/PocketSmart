@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jewelry Planner - PocketSmart</title>
+    <style>
+        body { font-family: sans-serif; background: #f1f5f9; margin: 0; padding: 30px 15px; }
+        .box { max-width: 650px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        h2 { margin-top: 0; color: #1e293b; }
+        .back-link { display: inline-block; margin-bottom: 20px; color: #2563eb; text-decoration: none; font-weight: bold; }
+        .form-group { margin-bottom: 14px; }
+        label { display: block; font-size: 14px; font-weight: bold; color: #475569; margin-bottom: 5px; }
+        input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
+        button { width: 100%; padding: 12px; background: #2563eb; color: white; border: none; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 10px; }
+        button:disabled { background: #94a3b8; cursor: not-allowed; }
+        #status { margin-top: 15px; font-weight: bold; color: #db2777; text-align: center; }
+        .card { background: #fdf2f8; border: 1px solid #fbcfe8; border-left: 5px solid #db2777; padding: 15px; margin-top: 15px; border-radius: 6px; }
+        .card h4 { margin: 0 0 8px 0; color: #0f172a; font-size: 16px; }
+        .price-badge { background: #fce7f3; color: #9d174d; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 14px; display: inline-block; margin-bottom: 10px; }
+        .links { margin-top: 8px; }
+        .btn-link { display: inline-block; margin-right: 10px; padding: 6px 12px; background: #db2777; color: white; text-decoration: none; border-radius: 4px; font-size: 13px; font-weight: bold; }
+        .btn-amazon { background: #0284c7; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <a href="/" class="back-link">← Back to Dashboard</a>
+        <h2>💍 Jewelry Budget Planner</h2>
+        
+        <form id="jewelryForm">
+            <div class="form-group">
+                <label>Total Budget (₹):</label>
+                <input type="number" id="budget" value="15000" required>
+            </div>
+            <div class="form-group">
+                <label>Occasion:</label>
+                <input type="text" id="occasion" value="Wedding Reception" required>
+            </div>
+            <div class="form-group">
+                <label>Upload Outfit Image (Optional):</label>
+                <input type="file" id="image" accept="image/*">
+            </div>
+            <button type="button" id="submitBtn" onclick="generateJewelryPlan()">Match Jewelry</button>
+        </form>
+
+        <div id="status"></div>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        async function generateJewelryPlan() {
+            var btn = document.getElementById("submitBtn");
+            var statusDiv = document.getElementById("status");
+            var resultsDiv = document.getElementById("results");
+
+            btn.disabled = true;
+            statusDiv.innerText = "⏳ Matching jewelry recommendations, please wait...";
+            resultsDiv.innerHTML = "";
+
+            var formData = new FormData();
+            formData.append("total_budget", document.getElementById("budget").value || "15000");
+            formData.append("occasion", document.getElementById("occasion").value || "Party");
+
+            var fileInput = document.getElementById("image");
+            if (fileInput.files.length > 0) {
+                formData.append("image", fileInput.files[0]);
+            }
+
+            try {
+                var response = await fetch("/jewelry-budget", {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error("Server error: " + response.status);
+                }
+
+                var data = await response.json();
+                statusDiv.innerText = "";
+
+                if (!data.items || data.items.length === 0) {
+                    resultsDiv.innerHTML = "<p>No jewelry items found.</p>";
+                    btn.disabled = false;
+                    return;
+                }
+
+                var out = "<h3 style='margin-top:20px; color:#1e293b;'>Jewelry Recommendations:</h3>";
+                for (var i = 0; i < data.items.length; i++) {
+                    var item = data.items[i];
+                    var amazonUrl = item.amazon || "https://www.amazon.in/s?k=" + encodeURIComponent(item.name);
+                    var tanishqUrl = item.tanishq || "https://www.tanishq.co.in/search?q=" + encodeURIComponent(item.name);
+
+                    out += "<div class='card'>";
+                    out += "<h4>" + item.name + (item.style ? " (" + item.style + ")" : "") + "</h4>";
+                    out += "<div class='price-badge'>₹" + item.price + "</div>";
+                    out += "<div class='links'>";
+                    out += "<a href='" + amazonUrl + "' target='_blank' class='btn-link btn-amazon'>Buy on Amazon ↗️</a>";
+                    out += "<a href='" + tanishqUrl + "' target='_blank' class='btn-link'>Find on Tanishq ↗️</a>";
+                    out += "</div>";
+                    out += "</div>";
+                }
+
+                resultsDiv.innerHTML = out;
+            } catch (err) {
+                console.error(err);
+                statusDiv.innerText = "⚠️ Error fetching results. Check your terminal.";
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

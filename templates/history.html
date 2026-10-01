@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Recommendation History - PocketSmart</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f4f8; margin: 0; padding: 20px; }
+        .box { max-width: 700px; margin: auto; background: white; padding: 25px; border-radius: 8px; }
+        .item { background: #f8fafc; border-left: 4px solid #2563eb; padding: 12px; margin-bottom: 12px; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>📜 Past Recommendations</h2>
+        <a href="/">← Back to Dashboard</a>
+        <div style="margin-top: 20px;">
+            {% for entry in history %}
+            <div class="item">
+                <strong>{{ entry.type }} Planner</strong> - {{ entry.date }}<br>
+                <span>Total Budget: ₹{{ entry.data.total_budget }}</span>
+            </div>
+            {% else %}
+            <p>No recommendation history yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>
